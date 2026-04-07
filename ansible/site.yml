@@ -1,0 +1,6 @@
+---
+- name: Hardening the Born2bRoot Server
+  hosts: all
+  become: yes
+  roles:
+    - hardening

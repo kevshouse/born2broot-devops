@@ -1,0 +1,36 @@
+# --- OS Metadata ---
+.DS_Store
+Thumbs.db
+
+# --- Packer & Virtualization ---
+# Exclude the actual Virtual Machine images and ISOs
+*.iso
+*.vdi
+*.vbox
+*.vbox-prev
+*.ova
+*.ovf
+
+# Packer build artifacts and cache
+output-*/
+packer_cache/
+
+# --- Terraform ---
+# Local state files (these should usually be in a remote backend, but definitely not in Git)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# --- Ansible ---
+# Keep your roles clean
+*.retry
+# If you use Ansible Vault, don't ignore the encrypted files, but ignore the password file
+.ansible_vault_pass
+
+# --- Credentials & Environment ---
+# Never commit secrets
+*.pem
+*.key
+*.pub
+.env

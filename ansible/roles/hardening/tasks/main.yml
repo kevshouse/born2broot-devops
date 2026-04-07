@@ -1,0 +1,35 @@
+---
+- name: Install security essentials
+  ansible.builtin.apt:
+    name: [libpam-pwquality, ufw, sudo]
+    state: present
+    update_cache: yes
+
+- name: Create sudo log directory
+  ansible.builtin.file:
+    path: /var/log/sudo
+    state: directory
+    mode: '0755'
+
+- name: Configure Sudo requirements
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: '^Defaults'
+    line: "Defaults\tenv_reset,passwd_tries=3,badpass_message=\"Wrong password!\",logfile=\"/var/log/sudo/sudo_config\",requiretty"
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Change SSH port to 4242
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?Port 22'
+    line: "Port 4242"
+
+- name: Configure UFW - Allow SSH on port 4242
+  community.general.ufw:
+    rule: allow
+    port: '4242'
+    proto: tcp
+
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
