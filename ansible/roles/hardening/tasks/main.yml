@@ -1,7 +1,10 @@
 ---
-- name: Install security essentials
+- name: Install security essentials (pwquality, ufw, sudo)
   ansible.builtin.apt:
-    name: [libpam-pwquality, ufw, sudo]
+    name: 
+      - libpam-pwquality
+      - ufw
+      - sudo
     state: present
     update_cache: yes
 
@@ -11,18 +14,32 @@
     state: directory
     mode: '0755'
 
-- name: Configure Sudo requirements
+- name: Configure Sudo requirements (TTY, logging, and custom messages)
   ansible.builtin.lineinfile:
     path: /etc/sudoers
     regexp: '^Defaults'
     line: "Defaults\tenv_reset,passwd_tries=3,badpass_message=\"Wrong password!\",logfile=\"/var/log/sudo/sudo_config\",requiretty"
     validate: '/usr/sbin/visudo -cf %s'
 
-- name: Change SSH port to 4242
+- name: Allow packer user to sudo without TTY (Fixes shutdown lockout)
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    line: "Defaults:packer !requiretty"
+    validate: '/usr/sbin/visudo -cf %s'
+
+- name: Change SSH port to 4242 (Config change only)
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?Port 22'
     line: "Port 4242"
+  # We do NOT restart the service here to keep the build connection alive
+
+# ADD THIS TASK: Allow 22 so Packer can finish the build
+- name: Configure UFW - Allow SSH on port 22 (Temporary for build)
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
 
 - name: Configure UFW - Allow SSH on port 4242
   community.general.ufw:

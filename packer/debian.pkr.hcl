@@ -28,13 +28,13 @@ source "virtualbox-iso" "debian-base" {
   ssh_password         = var.ssh_password
   ssh_timeout          = "30m"
   ssh_handshake_attempts = "100"
-  ssh_port = 22
+  ssh_port = 22 # We stay on port 22 just for the build
   cpus                 = 2
   memory               = 2048
   headless             = false
   
-  # This fixes the Warning: Packer will now shut down the VM cleanly
-  shutdown_command     = "echo '${var.ssh_password}' | sudo -S -t /sbin/shutdown -h now"
+  # The standard shutdown command now works because of the !requiretty fix in Ansible
+  shutdown_command = "echo '${var.ssh_password}' | sudo -S /sbin/shutdown -h now"
 
   boot_command = [
     "<esc><wait>",
@@ -46,25 +46,21 @@ source "virtualbox-iso" "debian-base" {
   
   http_directory = "packer/http"
 }
+
 build {
   sources = ["source.virtualbox-iso.debian-base"]
 
-  # 1. Hand off to Ansible to do the heavy lifting (Security/Hardening)
   provisioner "ansible" {
     playbook_file   = "ansible/site.yml"
     user            = "packer"
     use_proxy       = false
     
-    # Replace your old extra_arguments with this new list:
     extra_arguments = [
       "--extra-vars", "ansible_sudo_pass=${var.ssh_password}",
       "--extra-vars", "ansible_password=${var.ssh_password}",
       "--ssh-extra-args", "-o IdentitiesOnly=yes -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
     ]
   }
-
-  # 2. Final message before shutdown
-  provisioner "shell" {
-    inline = ["echo 'Hardening Complete. Exporting Image...'"]
-  }
+  
+  # The shell provisioner is removed to prevent the handshake timeout error
 }
